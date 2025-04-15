@@ -48,7 +48,7 @@ class BezierApp:
     ctk.CTkButton(control_frame, text="Betöltés").pack(pady=5, anchor="c")
     ctk.CTkButton(control_frame, text="Export PNG").pack(pady=(5, 20), anchor="c")
 
-    ctk.CTkCheckBox(control_frame, text="Görbe", variable=self.show_curve, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
+    ctk.CTkCheckBox(control_frame, text="Görbe", variable=self.show_curve, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Lépések", variable=self.show_helpers, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Tangens pontban", variable=self.show_tangent, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Szakasz hosszak", variable=self.show_lengths, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
@@ -102,6 +102,21 @@ class BezierApp:
     self.draw()
 
 
+  # >>> DE CASTELJAU ALGORITHM
+  def de_casteljau(self, points, t):
+    if len(points) < 2:
+      return points[0]
+
+    new_points = []
+    for i in range(len(points) - 1):
+      b0 = np.array(points[i])
+      b1 = np.array(points[i + 1])
+      interp = (1 - t) * b0 + t * b1
+      new_points.append(interp)
+
+    return self.de_casteljau(new_points, t)
+
+
   # >>> (RE)DRAW CANVAS
   def draw(self):
     self.ax.clear()
@@ -127,6 +142,21 @@ class BezierApp:
         length = np.linalg.norm(p2 - p1)
         mid = (p1 + p2) / 2
         self.ax.text(*mid, f"{length:.2f}", fontsize=10, color='purple')
+
+    # draw curve
+    if self.show_curve.get() and len(self.points) >= 2:
+
+      # curve
+      ts = np.linspace(0, 1, 200)
+      curve = [self.de_casteljau(self.points, t) for t in ts]
+      xs, ys = zip(*curve)
+      self.ax.plot(xs, ys, 'b', label='Bézier görbe')
+
+      # t point
+      t = self.t_slider.get()
+      pt = self.de_casteljau(self.points, t)
+      self.ax.plot(pt[0], pt[1], 'ro', label=f'P(t={t:.2f})')
+
 
     self.ax.legend()
     self.canvas.draw()
