@@ -51,7 +51,7 @@ class BezierApp:
     ctk.CTkCheckBox(control_frame, text="Görbe", variable=self.show_curve, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Lépések", variable=self.show_helpers, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Tangens pontban", variable=self.show_tangent, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
-    ctk.CTkCheckBox(control_frame, text="Szakasz hosszak", variable=self.show_lengths, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
+    ctk.CTkCheckBox(control_frame, text="Szakasz hosszak", variable=self.show_lengths, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
 
     # event handlers
     self.canvas.mpl_connect('button_press_event', self.on_click)
@@ -103,6 +103,15 @@ class BezierApp:
     # draw control points
     xs, ys = zip(*self.points)
     self.ax.plot(xs, ys, 'o--', color='gray', label='Kontrollpontok')
+
+    # draw length between points
+    if self.show_lengths.get():
+      for i in range(len(self.points) - 1):
+        p1 = np.array(self.points[i])
+        p2 = np.array(self.points[i+1])
+        length = np.linalg.norm(p2 - p1)
+        mid = (p1 + p2) / 2
+        self.ax.text(*mid, f"{length:.2f}", fontsize=10, color='purple')
 
     self.ax.legend()
     self.canvas.draw()
