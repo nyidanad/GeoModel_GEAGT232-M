@@ -22,17 +22,15 @@ class BezierApp:
     ctk.set_default_color_theme('dark-blue')
 
     # canvas details
-    self.create_widgets(root)
+    self.create_widgets()
+    self.draw()
 
 
   # >>> CREATE WIDGETS
-  def create_widgets(self, root):
+  def create_widgets(self):
 
     # matplot figure config
-    self.fig, self.ax = plt.subplots(figsize=(9.0, 5.2))
-    self.ax.set(xlim=(0, 1), xticks=np.arange(0, 1.1, 0.1),
-                ylim=(0, 1), yticks=np.arange(0, 1.1, 0.1))
-    self.ax.grid(color = '#EDEDED')
+    self.fig, self.ax = plt.subplots(figsize=(9.0, 4.0))
     self.canvas = FigureCanvasTkAgg(self.fig, root)
     self.canvas.get_tk_widget().pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
 
@@ -56,13 +54,62 @@ class BezierApp:
     ctk.CTkCheckBox(control_frame, text="Szakasz hosszak", variable=self.show_lengths, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
 
     # event handlers
-    # ...
+    self.canvas.mpl_connect('button_press_event', self.on_click)
+    self.canvas.mpl_connect("button_release_event", self.on_release)
 
 
-class main():
-  def __init__(self):
-    root = ctk.CTk()
-    BezierApp(root)
-    root.mainloop()
+  # >>> EVENT HANDLER FUNCTIONS
+  # mouse event handelers
+  def on_click(self, event):
+    if (event.inaxes != self.ax):
+      return
+    
+    click = np.array([event.xdata, event.ydata])
 
-main()
+    # left click - add control point OR select it
+    if event.button == 1:
+      for i, pt in enumerate(self.points):
+        if np.linalg.norm(np.array(pt) - click) < 0.02:
+          self.selected_point = i
+          return
+      self.points.append([event.xdata, event.ydata])
+
+    # right click - remove control point
+    elif event.button == 3:
+      for pt in enumerate(self.points):
+        if np.linalg.norm(np.array(pt[1]) - click) < 0.02:
+          self.points.pop(pt[0])
+
+    self.draw()
+  
+  # deselecting selected point
+  def on_release(self, _):
+    self.selected_point = None
+
+
+  # >>> (RE)DRAW CANVAS
+  def draw(self):
+    self.ax.clear()
+    self.ax.set(xlim=(0, 1), xticks=np.arange(0, 1.1, 0.1),
+                ylim=(0, 1), yticks=np.arange(0, 1.1, 0.1))
+    self.ax.grid(color='#EDEDED')
+
+    # cheking if there's any existing control point
+    if self.points == []:
+      self.ax.set_title('Kattintson a pontok hozzáadásához')
+      self.canvas.draw()
+      return
+    
+    # draw control points
+    xs, ys = zip(*self.points)
+    self.ax.plot(xs, ys, 'o--', color='gray', label='Kontrollpontok')
+
+    self.ax.legend()
+    self.canvas.draw()
+
+
+# >>> ENTRY POINT
+if __name__ == "__main__":
+  root = ctk.CTk()
+  app = BezierApp(root)
+  root.mainloop()
