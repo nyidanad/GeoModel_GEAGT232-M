@@ -43,7 +43,7 @@ class BezierApp:
     self.t_slider.set(0.5)
     self.t_slider.pack(fill=ctk.X, pady=(0, 20))
 
-    ctk.CTkButton(control_frame, text="Új görbe").pack(pady=5, anchor="c")
+    ctk.CTkButton(control_frame, command=self.clear, text="Új görbe").pack(pady=5, anchor="c")
     ctk.CTkButton(control_frame, text="Mentés").pack(pady=5, anchor="c")
     ctk.CTkButton(control_frame, text="Betöltés").pack(pady=5, anchor="c")
     ctk.CTkButton(control_frame, text="Export PNG").pack(pady=(5, 20), anchor="c")
@@ -55,7 +55,8 @@ class BezierApp:
 
     # event handlers
     self.canvas.mpl_connect('button_press_event', self.on_click)
-    self.canvas.mpl_connect("button_release_event", self.on_release)
+    self.canvas.mpl_connect('button_release_event', self.on_release)
+    self.canvas.mpl_connect('motion_notify_event', self.on_drag)
 
 
   # >>> EVENT HANDLER FUNCTIONS
@@ -85,6 +86,20 @@ class BezierApp:
   # deselecting selected point
   def on_release(self, _):
     self.selected_point = None
+
+  # move selected point
+  def on_drag(self, event):
+    if event.inaxes != self.ax or self.selected_point is None:
+      return
+    self.points[self.selected_point] = [event.xdata, event.ydata]
+    self.draw()
+
+
+  # >>> BUTTON HANDLER FUNCTIONS
+  # clear canvas
+  def clear(self):
+    self.points = []
+    self.draw()
 
 
   # >>> (RE)DRAW CANVAS
