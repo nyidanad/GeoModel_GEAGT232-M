@@ -39,7 +39,7 @@ class BezierApp:
     control_frame.pack(side=ctk.RIGHT, fill=ctk.Y)
 
     ctk.CTkLabel(control_frame, text="t érték:").pack(padx=10, anchor="w")
-    self.t_slider = ctk.CTkSlider(control_frame, from_=0, to=1)
+    self.t_slider = ctk.CTkSlider(control_frame, from_=0, to=1, command=self.update_t)
     self.t_slider.set(0.5)
     self.t_slider.pack(fill=ctk.X, pady=(0, 20))
 
@@ -49,7 +49,7 @@ class BezierApp:
     ctk.CTkButton(control_frame, text="Export PNG").pack(pady=(5, 20), anchor="c")
 
     ctk.CTkCheckBox(control_frame, text="Görbe", variable=self.show_curve, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
-    ctk.CTkCheckBox(control_frame, text="Lépések", variable=self.show_helpers, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
+    ctk.CTkCheckBox(control_frame, text="Lépések", variable=self.show_helpers, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Tangens pontban", variable=self.show_tangent, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Szakasz hosszak", variable=self.show_lengths, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
 
@@ -94,6 +94,10 @@ class BezierApp:
     self.points[self.selected_point] = [event.xdata, event.ydata]
     self.draw()
 
+  # t update depending on slider
+  def update_t(self, val):
+    self.t = float(val)
+    self.draw()
 
   # >>> BUTTON HANDLER FUNCTIONS
   # clear canvas
@@ -104,17 +108,18 @@ class BezierApp:
 
   # >>> DE CASTELJAU ALGORITHM
   def de_casteljau(self, points, t):
-    if len(points) < 2:
-      return points[0]
+    levels = [points]
+    while len(points) > 1:
+      new_points = []
+      for i in range(len(points) - 1):
+        b0 = np.array(points[i])
+        b1 = np.array(points[i + 1])
+        interp = (1 - t) * b0 + t * b1
+        new_points.append(interp)
+      levels.append(new_points)
+      points = new_points
 
-    new_points = []
-    for i in range(len(points) - 1):
-      b0 = np.array(points[i])
-      b1 = np.array(points[i + 1])
-      interp = (1 - t) * b0 + t * b1
-      new_points.append(interp)
-
-    return self.de_casteljau(new_points, t)
+    return points[0], levels
 
 
   # >>> (RE)DRAW CANVAS
@@ -148,15 +153,25 @@ class BezierApp:
 
       # curve
       ts = np.linspace(0, 1, 200)
-      curve = [self.de_casteljau(self.points, t) for t in ts]
+      curve = [self.de_casteljau(self.points, t)[0] for t in ts]
       xs, ys = zip(*curve)
       self.ax.plot(xs, ys, 'b', label='Bézier görbe')
 
       # t point
       t = self.t_slider.get()
-      pt = self.de_casteljau(self.points, t)
+      pt = self.de_casteljau(self.points, t)[0]
       self.ax.plot(pt[0], pt[1], 'ro', label=f'P(t={t:.2f})')
 
+    # draw helpers
+    if self.show_helpers.get():
+      t = self.t_slider.get()
+      levels = self.de_casteljau(self.points, t)[1]
+
+      for level in levels[1:]:
+        if len(level) < 2:
+          break
+        xs, ys = zip(*level)
+        self.ax.plot(xs, ys, 'o--')
 
     self.ax.legend()
     self.canvas.draw()
