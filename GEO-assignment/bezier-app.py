@@ -2,6 +2,8 @@ import customtkinter as ctk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
+from tkinter import filedialog
+import json
 
 class BezierApp:
   def __init__(self, root):
@@ -44,9 +46,9 @@ class BezierApp:
     self.t_slider.pack(fill=ctk.X, pady=(0, 20))
 
     ctk.CTkButton(control_frame, command=self.clear, text="Új görbe").pack(pady=5, anchor="c")
-    ctk.CTkButton(control_frame, text="Mentés").pack(pady=5, anchor="c")
-    ctk.CTkButton(control_frame, text="Betöltés").pack(pady=5, anchor="c")
-    ctk.CTkButton(control_frame, text="Export PNG").pack(pady=(5, 20), anchor="c")
+    ctk.CTkButton(control_frame, command=self.save, text="Mentés").pack(pady=5, anchor="c")
+    ctk.CTkButton(control_frame, command=self.load, text="Betöltés").pack(pady=5, anchor="c")
+    ctk.CTkButton(control_frame, command=self.export_png, text="Export PNG").pack(pady=(5, 20), anchor="c")
 
     ctk.CTkCheckBox(control_frame, text="Görbe", variable=self.show_curve, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Lépések", variable=self.show_helpers, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
@@ -104,6 +106,42 @@ class BezierApp:
   def clear(self):
     self.points = []
     self.draw()
+
+  # save canvas points into .json
+  def save(self):
+    path = filedialog.asksaveasfilename(
+      defaultextension='.json', 
+      filetypes=[('JSON files', '*.json')],
+      initialfile='bezier-curve.json', 
+      initialdir='~/Downloads',
+      title='SaveAs JSON file'
+    )
+    if path:
+      with open(path, 'w') as f:
+        json.dump(self.points, f)
+
+  # load previously saved canvas
+  def load(self):
+    path = filedialog.askopenfilename(
+      filetypes=[('JSON files', '*.json')],
+      initialdir='~/Downloads',
+      title='Open JSON file'
+    )
+    if path:
+      with open(path, 'r') as f:
+        self.points = json.load(f)
+      self.draw()
+
+  # save canvas into .png
+  def export_png(self):
+    path = filedialog.asksaveasfilename(
+      defaultextension='.png',
+      initialfile='bezier-curve.png',
+      initialdir='~/Pictures',
+      title='SaveAS PNG file'
+    )
+    if path:
+      self.fig.savefig(path)
 
 
   # >>> DE CASTELJAU ALGORITHM
