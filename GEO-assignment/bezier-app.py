@@ -52,7 +52,7 @@ class BezierApp:
 
     ctk.CTkCheckBox(control_frame, text="Görbe", variable=self.show_curve, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Lépések", variable=self.show_helpers, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
-    ctk.CTkCheckBox(control_frame, text="Tangens pontban", variable=self.show_tangent, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
+    ctk.CTkCheckBox(control_frame, text="Tangens pontban", variable=self.show_tangent, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
     ctk.CTkCheckBox(control_frame, text="Szakasz hosszak", variable=self.show_lengths, command=self.draw, checkbox_width=20, checkbox_height=20).pack(padx=10, anchor="w")
 
     # event handlers
@@ -158,6 +158,19 @@ class BezierApp:
       points = new_points
 
     return points[0], levels
+  
+
+  # >>> CALCULATE TANGENT
+  def calc_tangent(self, t):
+    n = len(self.points) - 1
+    if n < 1:
+      return None
+      
+    diff_points = []
+    for i in range(n):
+      diff_points.append(np.subtract(self.points[i+1], self.points[i]))
+    tangent = self.de_casteljau(diff_points, t)[0]
+    return n * tangent
 
 
   # >>> (RE)DRAW CANVAS
@@ -210,6 +223,16 @@ class BezierApp:
           break
         xs, ys = zip(*level)
         self.ax.plot(xs, ys, 'o--')
+
+    # draw tangent
+    if self.show_tangent.get() and len(self.points) >= 2:
+      t = self.t_slider.get()
+      tangent = self.calc_tangent(t)
+
+      if tangent is not None:
+        pt = self.de_casteljau(self.points, t)[0]
+        norm = tangent / np.linalg.norm(tangent) * 0.07
+        self.ax.arrow(pt[0], pt[1], norm[0], norm[1], color='green', head_width=0.01, label='Tangens')
 
     self.ax.legend()
     self.canvas.draw()
