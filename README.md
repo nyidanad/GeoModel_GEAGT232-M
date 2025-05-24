@@ -5,7 +5,7 @@ Ez egy interaktív, Python-alapú Bézier-görbe vizualizáló alkalmazás, amel
 
 **Főbb funkciók:**
 1. pont lerakása `<bal klikk>`
-2. pont törlése `<joob klikk>`
+2. pont törlése `<jobb klikk>`
 3. pont mozgatása `drag & drop`
 4. görbe kiszámítása és megjelenítése `[checkbox]`
 5. görbe segítők kiszámítása és megjelenítése `[checkbox]`
